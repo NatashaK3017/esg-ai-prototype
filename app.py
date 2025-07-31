@@ -1,67 +1,61 @@
 import streamlit as st
 import pandas as pd
-import openai
-import fitz  # PyMuPDF
-import docx
-import os
-
-st.title("🧠 ESG AI Report Generator")
-
-# Upload Excel ESG data
-excel_file = st.file_uploader("Upload ESG data (Excel)", type=["xlsx"])
-
-# Upload policy/governance documents
-uploaded_docs = st.file_uploader("Upload ESG policy documents", type=["pdf", "docx"], accept_multiple_files=True)
-
-# Choose section
-section = st.selectbox("Which section to generate?", ["Emissions", "Governance"])
-
-# OpenAI API Key (You can also use st.secrets in production)
 from openai import OpenAI
 
+# Initialize OpenAI client
 client = OpenAI()
 
-openai.api_key = "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"
+# Function to load mock Excel data
+@st.cache_data
+def load_excel(file_path, sheet_name):
+    return pd.read_excel(file_path, sheet_name=sheet_name)
 
-def extract_text(file):
-    if file.type == "application/pdf":
-        doc = fitz.open(stream=file.read(), filetype="pdf")
-        return "\n".join(page.get_text() for page in doc)
-    elif file.type == "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
-        d = docx.Document(file)
-        return "\n".join(p.text for p in d.paragraphs)
-    return ""
+# Load your mock data (update the path if needed)
+emissions_df = load_excel("mock_esg_data.xlsx", sheet_name="Emissions")
 
-if st.button("⚡ Generate Report Section"):
-    if not excel_file or not uploaded_docs:
-        st.warning("Please upload both ESG data and documents.")
+# Dummy ESG documents text
+sustainability_policy_text = """Our company is committed to reducing emissions across operations and engaging suppliers to improve Scope 3 performance..."""
+board_charter_text = """The board oversees all governance matters including ethical conduct, risk management, and corporate transparency..."""
+
+st.title("ESG Reporting Prototype")
+
+# Show the emissions data
+st.header("Emissions Data")
+st.dataframe(emissions_df)
+
+# Show dummy documents
+st.header("Sustainability Policy")
+st.write(sustainability_policy_text)
+
+st.header("Board Charter")
+st.write(board_charter_text)
+
+# Text input for prompt to AI
+prompt_input = st.text_area("Enter your question or prompt about ESG reporting:")
+
+if st.button("Generate AI Response"):
+    if not prompt_input.strip():
+        st.warning("Please enter a prompt.")
     else:
-        # Read Excel
-        df = pd.read_excel(excel_file, sheet_name=section)
+        # Compose the full prompt for the AI, combining dummy docs + user input
+        full_prompt = (
+            f"Sustainability Policy:\n{sustainability_policy_text}\n\n"
+            f"Board Charter:\n{board_charter_text}\n\n"
+            f"Emissions Data Summary:\n{emissions_df.describe().to_string()}\n\n"
+            f"User Question: {prompt_input}\n"
+            f"Answer the question based on the above ESG data and documents."
+        )
 
-        # Extract all text
-        doc_text = "\n\n".join([extract_text(doc) for doc in uploaded_docs])
+        # Call OpenAI's chat completion
+        try:
+            response = client.chat.completions.create(
+                model="gpt-3.5-turbo",  # Use "gpt-4" if you have access
+                messages=[{"role": "user", "content": full_prompt}],
+                temperature=0.3,
+            )
+            answer = response.choices[0].message.content
+            st.subheader("AI Response")
+            st.write(answer)
 
-        # Prompt to OpenAI
-        prompt = f"""
-You are an ESG analyst writing a {section} disclosure using GRI standards.
-Use this data:
-
-{df.to_string(index=False)}
-
-And these documents:
-
-{doc_text[:1500]}  # truncate for token limits
-
-Write a clear, ~150-word ESG report section.
-"""
-
-response = client.chat.completions.create(
-    model="gpt-4",
-    messages=[{"role": "user", "content": prompt}],
-    temperature=0.3
-)
-generated_text = response.choices[0].message.content
-st.subheader("✍️ Draft Report")
-st.markdown(output)
-st.download_button("Download Text", output, file_name=f"{section.lower()}_report.txt")
+        except Exception as e:
+            st.error(f"Error calling OpenAI API: {e}")
