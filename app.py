@@ -58,7 +58,6 @@ response = client.chat.completions.create(
     temperature=0.3
 )
 generated_text = response.choices[0].message.content
-
-        st.subheader("✍️ Draft Report")
-        st.markdown(output)
-        st.download_button("Download Text", output, file_name=f"{section.lower()}_report.txt")
+st.subheader("✍️ Draft Report")
+st.markdown(output)
+st.download_button("Download Text", output, file_name=f"{section.lower()}_report.txt")
