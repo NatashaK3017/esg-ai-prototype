@@ -17,6 +17,10 @@ uploaded_docs = st.file_uploader("Upload ESG policy documents", type=["pdf", "do
 section = st.selectbox("Which section to generate?", ["Emissions", "Governance"])
 
 # OpenAI API Key (You can also use st.secrets in production)
+from openai import OpenAI
+
+client = OpenAI()
+
 openai.api_key = "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"
 
 def extract_text(file):
