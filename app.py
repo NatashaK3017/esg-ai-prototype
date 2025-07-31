@@ -5,6 +5,10 @@ from openai import OpenAI
 # Initialize OpenAI client
 client = OpenAI()
 
+# Import API key
+api_key = os.getenv("OPENAI_API_KEY")
+client = OpenAI(api_key=api_key)
+
 # Function to load mock Excel data
 @st.cache_data
 def load_excel(file_path, sheet_name):
