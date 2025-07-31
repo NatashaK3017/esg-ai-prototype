@@ -17,7 +17,7 @@ uploaded_docs = st.file_uploader("Upload ESG policy documents", type=["pdf", "do
 section = st.selectbox("Which section to generate?", ["Emissions", "Governance"])
 
 # OpenAI API Key (You can also use st.secrets in production)
-openai.api_key = "your-openai-api-key-here"
+openai.api_key = "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"
 
 def extract_text(file):
     if file.type == "application/pdf":
@@ -52,13 +52,13 @@ And these documents:
 Write a clear, ~150-word ESG report section.
 """
 
-        response = openai.ChatCompletion.create(
-            model="gpt-4",
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.3
-        )
+response = client.chat.completions.create(
+    model="gpt-4",
+    messages=[{"role": "user", "content": prompt}],
+    temperature=0.3
+)
+generated_text = response.choices[0].message.content
 
-        output = response.choices[0].message.content
         st.subheader("✍️ Draft Report")
         st.markdown(output)
         st.download_button("Download Text", output, file_name=f"{section.lower()}_report.txt")
