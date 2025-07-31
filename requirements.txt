@@ -1,0 +1,6 @@
+streamlit
+openai
+pandas
+PyMuPDF
+python-docx
+llama-index
